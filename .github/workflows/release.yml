@@ -26,17 +26,18 @@ jobs:
             engine_name: wektor-engine.exe
             artifact_glob: release/*.exe
           # Two separate mac jobs on purpose: macos-latest runs on Apple
-          # Silicon (arm64) hardware, macos-13 is the last Intel (x64)
-          # runner GitHub still offers. PyInstaller doesn't cross-compile,
-          # so each dmg needs its Python engine binary built on real
-          # matching hardware -- one combined "universal" mac job would
-          # silently ship an arm64-only engine binary inside the x64 dmg,
-          # which would fail to launch on real Intel Macs.
+          # Silicon (arm64) hardware, macos-15-intel is GitHub's current
+          # Intel (x64) runner label (macos-13 was retired Dec 2025).
+          # PyInstaller doesn't cross-compile, so each dmg needs its
+          # Python engine binary built on real matching hardware -- one
+          # combined "universal" mac job would silently ship an
+          # arm64-only engine binary inside the x64 dmg, which would
+          # fail to launch on real Intel Macs.
           - os: macos-latest
             dist_script: dist:mac
             engine_name: wektor-engine
             artifact_glob: release/*.dmg
-          - os: macos-13
+          - os: macos-15-intel
             dist_script: dist:mac
             engine_name: wektor-engine
             artifact_glob: release/*.dmg
