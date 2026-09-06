@@ -1,0 +1,13 @@
+@echo off
+cd /d "%~dp0"
+echo Starting Wektor Desktop...
+echo.
+echo Checking Python dependencies...
+pip install -r requirements.txt
+echo.
+echo Checking Node dependencies...
+call npm install
+echo.
+echo Starting Electron...
+call npm start
+pause

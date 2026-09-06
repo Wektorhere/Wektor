@@ -1,0 +1,40 @@
+# Secrets — never commit a real .env. Ship .env.example instead (see below).
+.env
+.env.local
+.env.*.local
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+*.egg-info/
+
+# Build output
+build/
+dist/
+*.spec
+release/
+out/
+
+# Node
+node_modules/
+npm-debug.log*
+
+# WEKTOR_HANDOFF.md — internal working notes, not meant for the public repo
+WEKTOR_HANDOFF.md
+
+# OS cruft
+.DS_Store
+Thumbs.db
+
+# Local test artifacts (databases, license cache, instance id — none of
+# these should ever be real user data, but keep them out of git regardless)
+*.db
+*.sqlite
+*.sqlite3
+license.enc
+.instance-id
+.lk
+wektor_handoff.md

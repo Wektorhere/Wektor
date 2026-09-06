@@ -1,0 +1,73 @@
+{
+  "name": "wektor-desktop",
+  "version": "1.0.0",
+  "description": "Wektor desktop application",
+  "scripts": {
+    "start": "electron .",
+    "postinstall": "node build-vendor.js",
+    "dist": "electron-builder",
+    "dist:mac": "electron-builder --mac",
+    "dist:win": "electron-builder --win",
+    "dist:linux": "electron-builder --linux",
+    "dist:dir": "electron-builder --dir"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "UNLICENSED",
+  "devDependencies": {
+    "electron": "42.8.1",
+    "electron-builder": "26.15.7",
+    "tailwindcss": "3.4.19",
+    "chart.js": "4.4.1",
+    "html2canvas": "1.4.1",
+    "jspdf": "4.2.1"
+  },
+  "main": "main.js",
+  "overrides": {
+    "dompurify": "^3.4.13"
+  },
+  "build": {
+    "appId": "com.wektor.desktop",
+    "productName": "Wektor",
+    "copyright": "Copyright (c) Wektor",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "index.html",
+      "demo-data.js",
+      "vendor/**/*",
+      "!**/*.py",
+      "!node_modules/**/*"
+    ],
+    "extraResources": [
+      {
+        "from": "dist/engine",
+        "to": "engine",
+        "filter": [
+          "**/*"
+        ]
+      }
+    ],
+    "mac": {
+      "icon": "icon.icns",
+      "target": "dmg",
+      "category": "public.app-category.productivity"
+    },
+    "win": {
+      "icon": "icon.ico",
+      "target": "nsis"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    },
+    "linux": {
+      "icon": "icon.png",
+      "target": "AppImage",
+      "category": "Office"
+    }
+  }
+}

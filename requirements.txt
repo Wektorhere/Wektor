@@ -1,0 +1,17 @@
+flask==3.1.3
+flask-cors==6.0.5
+pandas==3.0.3
+openpyxl==3.1.5
+numpy==2.4.6
+RestrictedPython
+keyring
+cryptography
+# PostgreSQL and MySQL support (Database Connector + Daily Watch). Using
+# pg8000 and PyMySQL instead of psycopg2-binary/mysqlclient specifically
+# because both are pure-Python drivers with no C-extension build step —
+# they install with a plain pip install on any machine, no pg_config, no
+# MySQL client headers, no compiler required. That's what makes it safe
+# to keep these as normal default dependencies rather than an optional
+# extra a non-technical user would need to know to install separately.
+pg8000
+PyMySQL
