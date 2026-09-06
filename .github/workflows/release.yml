@@ -92,9 +92,13 @@ jobs:
 
       # electron-builder picks up the matching mac/win/linux target from
       # package.json's "build" config automatically based on which
-      # dist:<platform> script runs.
+      # dist:<platform> script runs. --publish=never stops electron-builder
+      # from trying to publish a GitHub Release itself (it auto-detects the
+      # git tag and attempts this by default) -- the separate "release" job
+      # below is the only thing that should upload assets, using
+      # softprops/action-gh-release with its own token.
       - name: Package the Electron app
-        run: npm run ${{ matrix.dist_script }}
+        run: npm run ${{ matrix.dist_script }} -- --publish=never
 
       - name: Upload this platform's build as a workflow artifact
         uses: actions/upload-artifact@v4
