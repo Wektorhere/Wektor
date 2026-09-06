@@ -1,0 +1,122 @@
+name: Build & Release
+
+# Triggers automatically whenever a tag like v1.0.0, v1.2.3, etc. is pushed.
+# Push a new tag any time you want a new release built for all three
+# platforms: git tag v1.0.1 && git push origin v1.0.1
+on:
+  push:
+    tags:
+      - 'v*'
+
+# Needed so the release step below can create/attach assets to a GitHub Release.
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      # If one platform's build fails, let the others keep going instead of
+      # cancelling the whole matrix — you still get partial release assets
+      # to investigate, rather than nothing at all.
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            dist_script: dist:win
+            engine_name: wektor-engine.exe
+            artifact_glob: release/*.exe
+          - os: macos-latest
+            dist_script: dist:mac
+            engine_name: wektor-engine
+            artifact_glob: release/*.dmg
+          - os: ubuntu-latest
+            dist_script: dist:linux
+            engine_name: wektor-engine
+            artifact_glob: release/*.AppImage
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # Install the Python build + runtime dependencies straight from
+      # requirements.txt, so this always matches what engine.py actually
+      # needs — nothing hardcoded/duplicated here that could drift out of
+      # sync with the real dependency list.
+      - name: Install Python dependencies
+        shell: bash
+        run: |
+          pip install -r requirements.txt
+          pip install pyinstaller
+
+      # There's no real .env in the repo (it's gitignored on purpose --
+      # BYOK means no real secret ever needs to ship in the binary).
+      # .env.example has safe, non-secret defaults (model lists, no keys),
+      # so that's what ships inside the packaged engine here too.
+      - name: Prepare .env from the example (no real secrets in CI)
+        shell: bash
+        run: cp .env.example .env
+
+      # Same PyInstaller invocation as build_engine.sh / build-engine.bat,
+      # just run inline here so it's OS-agnostic in one place instead of
+      # needing separate CI logic per platform. `shell: bash` works on all
+      # three runners, including Windows (which ships Git Bash), so this
+      # single step covers every OS in the matrix without branching.
+      - name: Build the Python engine binary
+        shell: bash
+        run: |
+          rm -rf build dist wektor-engine.spec
+          pyinstaller --onefile --name wektor-engine \
+            --hidden-import keyring.backends.Windows \
+            --hidden-import keyring.backends.macOS \
+            --hidden-import keyring.backends.SecretService \
+            engine.py
+          mkdir -p dist/engine
+          mv dist/wektor-engine* dist/engine/
+          cp .env dist/engine/.env
+          ls -la dist/engine/
+
+      - name: Install Node dependencies
+        run: npm install
+
+      # electron-builder picks up the matching mac/win/linux target from
+      # package.json's "build" config automatically based on which
+      # dist:<platform> script runs.
+      - name: Package the Electron app
+        run: npm run ${{ matrix.dist_script }}
+
+      - name: Upload this platform's build as a workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: wektor-${{ matrix.os }}
+          path: ${{ matrix.artifact_glob }}
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all platform artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      # Attaches every downloaded build (Windows .exe, macOS .dmg, Linux
+      # .AppImage) to a single GitHub Release matching the pushed tag —
+      # this replaces the manual "create release, drag the .exe in"
+      # process from v1.0.0 going forward.
+      - name: Create GitHub Release with all platform builds attached
+        uses: softprops/action-gh-release@v2
+        with:
+          files: artifacts/**/*
+          generate_release_notes: true
