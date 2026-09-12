@@ -44,14 +44,6 @@ start.bat
 ```
 *(This automatically resolves Python dependencies via `requirements.txt` and boots the Electron interface).*
 
-### 2. Launching the Product Website
-To run the Next.js landing page server locally:
-```cmd
-cd landing-page
-npm install
-npm run dev
-```
-
 ---
 
 ## 📊 Core Features
