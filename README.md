@@ -6,23 +6,27 @@ Wektor is a secure, **local-first operational intelligence analyst, What-If simu
 
 ## 📂 Repository Structure
 
-This repository is set up as a monorepo containing both the core desktop application and the product landing page website:
+```
+├── engine.py           # Flask backend server (data analysis, LLM integrations, and sandboxed runtimes)
+├── main.js             # Electron main process (subprocess spawning, shell lifecycle)
+├── preload.js          # Secure IPC bridges and path extraction
+├── index.html          # Desktop application GUI (Tailwind CSS, Chart.js)
+├── sandbox_executor.py # Isolated exec() environment for AI-generated analysis code
+├── license_manager.py  # Lifetime/Pro entitlement checks (Python-side enforcement)
+├── daily_watch.py       # Scheduled Daily Watch snapshot logic
+├── key_store.py         # OS-keychain-backed credential storage
+├── build-engine.sh / .bat  # PyInstaller build scripts for the Python engine binary
+├── start.bat            # Dev-only startup script (raw `python engine.py`, not for end users)
+└── requirements.txt     # Python dependency declarations
+```
 
-```
-├── landing-page/      # Next.js 16 + Tailwind CSS marketing & compliance site
-├── engine.py          # Flask backend server (data analysis, LLM integrations, and sandboxed runtimes)
-├── main.js            # Electron main process (subprocess spawning, shell lifecycle)
-├── preload.js         # Secure IPC bridges and path extraction
-├── index.html         # Desktop application GUI (Tailwind CSS, Chart.js)
-├── start.bat          # Startup scripts (automation for local setups)
-└── requirements.txt   # Python dependency declarations
-```
+The [Wektor landing page](https://wektor.vercel.app/) is maintained in a separate repository — it isn't part of this repo.
 
 ---
 
 ## 🛡️ Security & Privacy Architecture
 
-See [`PRIVACY.md`](./PRIVACY.md) for the full data-retention and privacy policy.
+See [`privacy.md`](./privacy.md) for the full data-retention and privacy policy.
 
 
 Wektor is built under a **data isolation** framework:
@@ -37,20 +41,25 @@ Wektor is built under a **data isolation** framework:
 
 ## 🚀 Getting Started
 
-### 1. Launching the Desktop App
-To run the desktop application, run the automated script in the root directory:
+### 1. Download the app (most people want this)
+Grab the installer for your OS from the [latest release](https://github.com/Wektorhere/Wektor/releases/latest):
+
+- **macOS (Apple Silicon)** — `Wektor-<version>-arm64.dmg`
+- **macOS (Intel)** — `Wektor-<version>.dmg`
+- **Windows** — `Wektor Setup <version>.exe`
+- **Linux** — `Wektor-<version>.AppImage`
+
+No Python or Node installation needed — the Python engine is bundled into the app via PyInstaller.
+
+> **Note:** builds are currently unsigned. macOS Gatekeeper and Windows SmartScreen may show a warning on first launch — this is expected until code signing is set up. The full source is public in this repo if you'd like to verify what you're running before opening it.
+
+Once installed, open the app and either try one of the built-in sample datasets (no API key needed) or add your own AI provider key in Settings (OpenRouter, OpenAI, Anthropic, or Google) to analyze your own files.
+
+### 2. Run from source (for contributors / development)
 ```cmd
 start.bat
 ```
-*(This automatically resolves Python dependencies via `requirements.txt` and boots the Electron interface).*
-
-### 2. Launching the Product Website
-To run the Next.js landing page server locally:
-```cmd
-cd landing-page
-npm install
-npm run dev
-```
+*(This automatically resolves Python dependencies via `requirements.txt` and boots the Electron interface — you'll need Python and Node installed locally for this path.)*
 
 ---
 

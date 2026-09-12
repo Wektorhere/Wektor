@@ -450,6 +450,14 @@ def build_roast_prompt(metrics: dict, file_name: str = "your dataset", personali
     never touches the underlying dataframe or file. `metrics` is whatever
     the frontend already holds in appState after /api/analyze (margin,
     summaries, chart_data, deep_dive_data, data_quality) sent back up as-is.
+
+    NOTE: `file_name` is intentionally never forwarded into the prompt
+    text below. A user-chosen filename is not aggregated/derived data —
+    it can carry real client names, project codenames, or otherwise
+    sensitive text (e.g. "Q3_Layoffs_AcmeCorp_CONFIDENTIAL.xlsx") that
+    privacy.md never promises to protect from the cloud AI provider.
+    The parameter is kept for API compatibility / potential future local
+    (non-AI) use, but is deliberately unused here.
     """
     metrics = metrics or {}
 
@@ -524,7 +532,7 @@ def build_roast_prompt(metrics: dict, file_name: str = "your dataset", personali
     voice = ROAST_PERSONALITY_VOICES.get(personality, ROAST_PERSONALITY_VOICES["brutalBoss"])
 
     return (
-        f"Dataset: {file_name}\n\n"
+        f"Dataset: your dataset\n\n"
         f"{voice}\n\n"
         "Here are ALREADY-COMPUTED, aggregated analysis results for this dataset "
         "(these are summary metrics only — you are not being shown any raw rows):\n\n"
@@ -580,6 +588,26 @@ def parse_roast_response(raw: str) -> dict:
         roast = roast[:600].rsplit(' ', 1)[0].rstrip('.,;:') + "..."
 
     return {"roast": roast, "score": score}
+
+
+def sanitize_error_for_ai(e: Exception) -> str:
+    """Turn an exception into a message that's safe to echo back to the
+    cloud AI provider in a retry prompt.
+
+    Some pandas/numpy exceptions embed an actual cell value in their
+    message -- e.g. `ValueError: could not convert string to float:
+    'Jane Doe'` or a bad groupby key repeated back in a KeyError. Retry
+    prompts get sent straight to the AI provider, so any quoted literal
+    is replaced with a placeholder here. This keeps enough of the error
+    shape for the model to still fix its own code (exception type +
+    general message), without risking a real data value leaving the
+    machine through an error message instead of through the intended
+    schema/stats channel.
+    """
+    msg = f"{type(e).__name__}: {e}"
+    msg = re.sub(r"'[^']*'", "'<value>'", msg)
+    msg = re.sub(r'"[^"]*"', '"<value>"', msg)
+    return msg
 
 
 class NoApiKeyError(RuntimeError):
@@ -1576,10 +1604,9 @@ def compute_data_quality(df: pd.DataFrame) -> dict:
 
 def get_column_schema(df: pd.DataFrame) -> list:
     """Column names + a coarse type classification ONLY — never row values.
-    This is metadata about the schema, in the same spirit as the existing
-    3-row sample sent to the AI: it lets the frontend offer real column
-    names for Column Mapping without the underlying data ever leaving the
-    backend.
+    This lets the frontend offer real column names for Column Mapping
+    without the underlying data ever leaving the backend, and without
+    calling the AI at all.
     """
     schema = []
     for col in df.columns:
@@ -2003,7 +2030,7 @@ def analyze_file():
                 current_prompt = (
                     f"{chart_prompt}\n\n"
                     f"CRITICAL: The previous Python code you generated failed with the following error:\n"
-                    f"Error: {e}\n\n"
+                    f"Error: {sanitize_error_for_ai(e)}\n\n"
                     f"The failed code was:\n"
                     f"```python\n{ai_code if 'ai_code' in locals() else 'No code generated'}\n```\n\n"
                     f"Please correct the error, ensuring correct Python syntax, block indentation (4 spaces), and proper try/except structures. "
@@ -2224,7 +2251,7 @@ def chat_with_data():
                 current_prompt = (
                     f"{prompt}\n\n"
                     f"CRITICAL: The previous Python code you generated failed with the following error:\n"
-                    f"Error: {e}\n\n"
+                    f"Error: {sanitize_error_for_ai(e)}\n\n"
                     f"The failed code was:\n"
                     f"```python\n{code_to_run if 'code_to_run' in locals() else raw_response}\n```\n\n"
                     f"Please correct the error, ensure proper try/except blocks are syntactically valid and indented (4 spaces), and make sure the variable `answer` is assigned a string response. Output ONLY code in a ```python block."

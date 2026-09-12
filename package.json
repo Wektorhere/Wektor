@@ -1,7 +1,7 @@
 {
   "name": "wektor-desktop",
   "version": "1.0.0",
-  "description": "Wektor desktop application",
+  "description": "Wektor AI desktop application",
   "scripts": {
     "start": "electron .",
     "postinstall": "node build-vendor.js",
@@ -28,8 +28,8 @@
   },
   "build": {
     "appId": "com.wektor.desktop",
-    "productName": "Wektor",
-    "copyright": "Copyright (c) Wektor",
+    "productName": "Wektor AI",
+    "copyright": "Copyright (c) Wektor AI",
     "directories": {
       "output": "release"
     },
